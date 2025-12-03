@@ -1,41 +1,48 @@
 from tmdb_client import TMDBClient
+from recommender import RecommenderFactory
+
 
 def main():
+    """Simple CLI to choose a recommendation mode and display TMDB results."""
     client = TMDBClient()
 
-    print("Welcome to the Movie Recommender!")
     while True:
-        title = input("\nEnter a movie title (or 'q' to quit): ")
+        print("\nChoose recommendation mode:")
+        print("1. Movies by age rating (G, PG, PG-13, R)")
+        print("2. Movies by genre name")
+        print("q. Quit")
 
-        if title.lower() == 'q':
-            print("Goodbye!")
+        choice = input("Enter choice: ").strip().lower()
+
+        if choice == "q":
             break
 
-        movie = client.search_movie(title)
+        movies = []  # ensure it's always defined
 
-        if not movie:
-            print("No results found. Try another title.")
+        if choice == "1":
+            mode = "rating"
+            rating = input("Enter an age rating (G, PG, PG-13, R, NC-17): ").strip().lower()
+            recommender = RecommenderFactory.create(mode, client)
+            movies = recommender.recommend(rating=rating)
+
+        elif choice == "2":
+            mode = "genre"
+            genre_name = input("Enter a genre (e.g., action, comedy, horror): ").strip().lower()
+            recommender = RecommenderFactory.create(mode, client)
+            movies = recommender.recommend(genre_name=genre_name)
+
+        else:
+            print("Invalid choice.")
             continue
 
-        print(f"\nFound: {movie['title']} (ID: {movie['id']})")
+        if not movies:
+            print("No results found or invalid input.")
+            continue
 
-        details = client.get_movie_details(movie["id"])
-        if details:
-            print(f"Overview:\n{details.get('overview', 'No overview available.')}\n")
-        else:
-            print("Couldn't load movie details.\n")
+        print("\n Top 10 Recommendations:")
+        for m in movies[:10]:
+            print("-", m.get("title", "Unknown title"))
 
-        print("Recommended similar movies:")
-        similar_movies = client.get_similar_movies(movie["id"])
-
-        if similar_movies:
-            for m in similar_movies[:5]:  # show top 5
-                sim_title = m.get("title", "Unknown Title")
-                release = m.get("release_date", "N/A")
-                year = release[:4] if release and len(release) >= 4 else "N/A"
-                print(f" - {sim_title} ({year})")
-        else:
-            print("No similar movies found.")
 
 if __name__ == "__main__":
     main()
