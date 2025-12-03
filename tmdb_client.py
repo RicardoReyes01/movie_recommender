@@ -1,3 +1,4 @@
+#imports requests module and api key and base url from config.py
 import requests
 from config import API_KEY, BASE_URL
 
@@ -5,8 +6,8 @@ from config import API_KEY, BASE_URL
 class TMDBClient:
     """Client wrapper around the TMDB API."""
 
-    # Static maps for genre names and age ratings (US certifications)
-    GENRE_MAP = {
+    #dictonaries for genre names 
+    GENRE_DICT = {
         "action": 28,
         "adventure": 12,
         "animation": 16,
@@ -28,20 +29,14 @@ class TMDBClient:
         "western": 37,
     }
 
-    CERTIFICATION_MAP = {
-        "g": "G",
-        "pg": "PG",
-        "pg-13": "PG-13",
-        "r": "R",
-        "nc-17": "NC-17",
-    }
-
+    #intializes the api key and base url within class
     def __init__(self, api_key=API_KEY, base_url=BASE_URL):
         self.api_key = api_key
         self.base_url = base_url
 
+    #searches for a movie by title the user inputs
     def search_movie(self, title: str):
-        """Search for a movie by title and return the first result (or None)."""
+        """Search for a movie by title and return the result"""
         url = f"{self.base_url}/search/movie"
         params = {
             "api_key": self.api_key,
@@ -58,19 +53,7 @@ class TMDBClient:
             print(f"Error searching movie: {e}")
             return None
 
-    def get_movie_details(self, movie_id: int):
-        """Get detailed information for a specific movie id."""
-        url = f"{self.base_url}/movie/{movie_id}"
-        params = {"api_key": self.api_key}
-
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            print(f"Error getting movie details: {e}")
-            return None
-
+    #searches for similar movies based on movie id
     def get_similar_movies(self, movie_id: int):
         """Return a list of movies similar to the given movie id."""
         url = f"{self.base_url}/movie/{movie_id}/similar"
@@ -84,21 +67,22 @@ class TMDBClient:
         except requests.RequestException as e:
             print(f"Error getting similar movies: {e}")
             return []
+    
 
+    
+    #searches for movies based on genre
     def get_genre_id(self, genre_name: str):
         """Convert a genre name that the user typed into a TMDB genre id."""
         if not genre_name:
             return None
-        return self.GENRE_MAP.get(genre_name.strip().lower())
+        return self.GENRE_DICT.get(genre_name.strip().lower())
 
     def discover_by_genre(self, genre_name: str):
-        """
-        Return a list of movies for a given genre NAME
-        (e.g., 'action', 'comedy', 'horror').
-        """
+        """Return a list of movies for a given genre"""
         genre_id = self.get_genre_id(genre_name)
         if not genre_id:
-            return []  # Invalid genre name
+            print("invalid genre name.")
+            return []  
 
         url = f"{self.base_url}/discover/movie"
         params = {
@@ -115,18 +99,13 @@ class TMDBClient:
             print(f"Error discovering movies by genre: {e}")
             return []
 
-
+    #searches for movies based on age rating
     def discover_by_age_rating(self, rating_name: str):
-        """
-        Return a list of movies filtered by age rating
-        (e.g., 'g', 'pg', 'pg-13', 'r', 'nc-17').
-        """
+        """Return a list of movies for a given age rating"""
         if not rating_name:
             return []
 
-        rating = self.CERTIFICATION_MAP.get(rating_name.strip().lower())
-        if not rating:
-            return []
+        rating = rating_name.strip().upper()
 
         url = f"{self.base_url}/discover/movie"
         params = {
@@ -143,3 +122,4 @@ class TMDBClient:
         except requests.RequestException as e:
             print(f"Error discovering movies by age rating: {e}")
             return []
+
